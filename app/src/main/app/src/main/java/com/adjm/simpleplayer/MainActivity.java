@@ -85,7 +85,40 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle b) {
-        super.onCreate(b);
+        super.onCreate(b);final File errFile = new File(getFilesDir(), "crash.txt");
+        if (errFile.exists()) {
+            String txt = "";
+            try {
+                java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(errFile));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) sb.append(line).append("\n");
+                br.close();
+                txt = sb.toString();
+            } catch (Exception ignored) { }
+            errFile.delete();
+            TextView tvErr = new TextView(this);
+            tvErr.setText(txt);
+            tvErr.setTextSize(11);
+            tvErr.setPadding(20, 40, 20, 20);
+            android.widget.ScrollView sv = new android.widget.ScrollView(this);
+            sv.addView(tvErr);
+            setContentView(sv);
+            return;
+        }
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            public void uncaughtException(Thread t, Throwable e) {
+                try {
+                    java.io.StringWriter sw = new java.io.StringWriter();
+                    e.printStackTrace(new java.io.PrintWriter(sw));
+                    java.io.FileWriter fw = new java.io.FileWriter(errFile);
+                    fw.write(sw.toString());
+                    fw.close();
+                } catch (Exception ignored) { }
+                android.os.Process.killProcess(android.os.Process.myPid());
+                System.exit(10);
+            }
+        });
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         LinearLayout root = new LinearLayout(this);
